@@ -1,0 +1,20 @@
+<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<addon id="plugin.video.sbview" name="SB View" version="3.3.1" provider-name="null_pointer">
+  <requires>
+    <import addon="xbmc.python" version="2.1.0"/>
+  </requires>
+  <extension point="xbmc.python.pluginsource" library="default.py">
+        <provides>video</provides>
+  </extension>
+  <extension point="xbmc.addon.metadata">
+    <forum></forum>
+    <license>GNU GENERAL PUBLIC LICENSE Version 3, 29 June 2007</license>
+    <platform>all</platform>
+    <language>en</language>
+    <website></website>
+    <email></email>
+    <source></source>  
+    <summary lang="en">Sick Beard Status Viewer</summary>
+    <description lang="en">Sick Beard Status Viewer</description>
+  </extension>
+</addon>
