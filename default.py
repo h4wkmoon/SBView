@@ -8,12 +8,15 @@ import os
 import time
 import datetime
 import xbmcaddon
+import urllib2
 from traceback import print_exc
 
 __settings__ = xbmcaddon.Addon(id='plugin.video.sbview')
 language = __settings__.getLocalizedString
 
 handle = int(sys.argv[1])
+dateFormat = "%I:%M %p %a %d %b %Y" 
+#"%a %I:%M %p %Y/%m/%d"
 
 # plugin modes
 MODE_VIEW_FUTURE = 10
@@ -71,11 +74,78 @@ def show_root_menu():
     xbmcplugin.endOfDirectory(handle=handle, succeeded=True)
 
 def view_future():
-    addDirectoryItem("Future Stuff", parameters={ PARAMETER_KEY_MODE: MODE_VIEW_FUTURE }, isFolder=True)
+
+    sbUrl = "http://192.168.0.15:2499/api/53da986b7cabc8fd86895c41e9f32714/future"
+    
+    apiResponce = urllib2.urlopen(sbUrl)
+    apiDataString = apiResponce.read()
+    apiResponce.close()
+    #xbmc.log(apiDataString, 2)
+    
+    result = eval(apiDataString)
+    
+    data = result.get('data')
+    if(data == None):
+        data = []
+    
+    # process the missed
+    missed = data.get('missed')
+    if(missed == None):
+        missed = []
+
+    for item in missed:
+        airDate = str(item["airdate"]) + " " + str(item["airs"])
+        airTime = time.strptime(airDate, "%Y-%m-%d %A %I:%M %p")
+        airTimeString = time.strftime(dateFormat, airTime)
+        nameString = "Missed - " + str(item["show_name"]) + " " + str(item["season"]) + "x" + str(item["episode"]) + " - " + str(airTimeString)
+        addDirectoryItem(nameString, parameters={ PARAMETER_KEY_MODE: MODE_VIEW_FUTURE }, isFolder=True)
+        
+    # process the soon
+    soon = data.get('soon')
+    if(soon == None):
+        soon = []
+
+    for item in soon:
+        airDate = str(item["airdate"]) + " " + str(item["airs"])
+        airTime = time.strptime(airDate, "%Y-%m-%d %A %I:%M %p")
+        airTimeString = time.strftime(dateFormat, airTime)
+        nameString = "Soon - " + str(item["show_name"]) + " " + str(item["season"]) + "x" + str(item["episode"]) + " - " + str(airTimeString)
+        addDirectoryItem(nameString, parameters={ PARAMETER_KEY_MODE: MODE_VIEW_FUTURE }, isFolder=True)
+        
+    # process the soon
+    later = data.get('later')
+    if(later == None):
+        later = []
+
+    for item in later:
+        airDate = str(item["airdate"]) + " " + str(item["airs"])
+        airTime = time.strptime(airDate, "%Y-%m-%d %A %I:%M %p")
+        airTimeString = time.strftime(dateFormat, airTime)
+        nameString = "Later - " + str(item["show_name"]) + " " + str(item["season"]) + "x" + str(item["episode"]) + " - " + str(airTimeString)
+        addDirectoryItem(nameString, parameters={ PARAMETER_KEY_MODE: MODE_VIEW_FUTURE }, isFolder=True)
+
+        
     xbmcplugin.endOfDirectory(handle=handle, succeeded=True)
     
 def view_history():
-    addDirectoryItem("History Stuff", parameters={ PARAMETER_KEY_MODE: MODE_VIEW_FUTURE }, isFolder=True)
+
+    sbUrl = "http://192.168.0.15:2499/api/53da986b7cabc8fd86895c41e9f32714/history/?limit=20"
+    
+    apiResponce = urllib2.urlopen(sbUrl)
+    apiDataString = apiResponce.read()
+    apiResponce.close()
+    #xbmc.log(apiDataString, 2)
+    
+    result = eval(apiDataString)
+
+    data = result.get('data')
+    if(data == None):
+        data = []
+
+    for item in data:
+        nameString = str(item["date"]) + " - " + str(item["show_name"]) + " " + str(item["season"]) + "x" + str(item["episode"]) + " - " + str(item["status"])
+        addDirectoryItem(nameString, parameters={ PARAMETER_KEY_MODE: MODE_VIEW_HISTORY }, isFolder=True)
+
     xbmcplugin.endOfDirectory(handle=handle, succeeded=True)
     
 # set up all the variables
