@@ -5,6 +5,7 @@
     <string id="30011">Host</string>
     <string id="30012">Port</string>
 	<string id="30013">GUID</string>
+    <string id="30014">Protocol</string>
     
     <string id="30111">Future</string>
     <string id="30112">History</string>

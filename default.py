@@ -44,8 +44,12 @@ def parameters_string_to_dict(parameters):
                 paramDict[paramSplits[0]] = paramSplits[1]
     return paramDict
 
-def addDirectoryItem(name, isFolder=True, parameters={}, totalItems=1):
-    li = xbmcgui.ListItem(name)
+def addDirectoryItem(name, isFolder=True, parameters={}, totalItems=1, thumbnail=""):
+    
+    if(thumbnail == ""):
+        li = xbmcgui.ListItem(name)
+    else:
+        li = xbmcgui.ListItem(name, thumbnailImage=thumbnail)
     
     commands = []
     #commands.append(( "Info", "XBMC.Action(Info)", ))
@@ -61,7 +65,7 @@ def addDirectoryItem(name, isFolder=True, parameters={}, totalItems=1):
     if not isFolder:
         url = name
         
-    log("Adding Directory Item: " + name + " totalItems:" + str(totalItems))
+    #log("Adding Directory Item: " + name + " totalItems:" + str(totalItems))
     
     #dirItem = DirectoryItem()
     
@@ -73,9 +77,41 @@ def show_root_menu():
     addDirectoryItem(name=language(30112), parameters={ PARAMETER_KEY_MODE: MODE_VIEW_HISTORY }, isFolder=True)
     xbmcplugin.endOfDirectory(handle=handle, succeeded=True)
 
+def get_sb_url():
+
+    prot = xbmcplugin.getSetting(handle, "prot")
+    if(prot == "0"):
+        sbUrl = "http://"
+    elif(prot == "1"):
+        sbUrl = "https://"
+        
+    host = xbmcplugin.getSetting(handle, "host")
+    sbUrl += host
+    
+    port = xbmcplugin.getSetting(handle, "port")
+    sbUrl += ":" + port    
+    
+    sbUrl += "/api/"
+    
+    guid = xbmcplugin.getSetting(handle, "guid")
+    
+    sbUrl += guid + "/"
+    
+    #xbmc.log(sbUrl, 2)
+    
+    return sbUrl
+    
+def get_thumbnail_url(show_id):
+ 
+    sbUrl = get_sb_url()
+    sbUrl += "?cmd=show.getposter&tvdbid=" + str(show_id)
+    
+    return sbUrl
+    
 def view_future():
 
-    sbUrl = "http://192.168.0.15:2499/api/53da986b7cabc8fd86895c41e9f32714/future"
+    sbUrl = get_sb_url()
+    sbUrl += "future"
     
     apiResponce = urllib2.urlopen(sbUrl)
     apiDataString = apiResponce.read()
@@ -98,7 +134,8 @@ def view_future():
         airTime = time.strptime(airDate, "%Y-%m-%d %A %I:%M %p")
         airTimeString = time.strftime(dateFormat, airTime)
         nameString = "Missed - " + str(item["show_name"]) + " " + str(item["season"]) + "x" + str(item["episode"]) + " - " + str(airTimeString)
-        addDirectoryItem(nameString, parameters={ PARAMETER_KEY_MODE: MODE_VIEW_FUTURE }, isFolder=True)
+        thumbnailUrl = get_thumbnail_url(item["tvdbid"])
+        addDirectoryItem(nameString, parameters={ PARAMETER_KEY_MODE: MODE_VIEW_FUTURE }, isFolder=True, thumbnail=thumbnailUrl)
         
     # process the soon
     soon = data.get('soon')
@@ -110,7 +147,8 @@ def view_future():
         airTime = time.strptime(airDate, "%Y-%m-%d %A %I:%M %p")
         airTimeString = time.strftime(dateFormat, airTime)
         nameString = "Soon - " + str(item["show_name"]) + " " + str(item["season"]) + "x" + str(item["episode"]) + " - " + str(airTimeString)
-        addDirectoryItem(nameString, parameters={ PARAMETER_KEY_MODE: MODE_VIEW_FUTURE }, isFolder=True)
+        thumbnailUrl = get_thumbnail_url(item["tvdbid"])
+        addDirectoryItem(nameString, parameters={ PARAMETER_KEY_MODE: MODE_VIEW_FUTURE }, isFolder=True, thumbnail=thumbnailUrl)
         
     # process the soon
     later = data.get('later')
@@ -122,14 +160,15 @@ def view_future():
         airTime = time.strptime(airDate, "%Y-%m-%d %A %I:%M %p")
         airTimeString = time.strftime(dateFormat, airTime)
         nameString = "Later - " + str(item["show_name"]) + " " + str(item["season"]) + "x" + str(item["episode"]) + " - " + str(airTimeString)
-        addDirectoryItem(nameString, parameters={ PARAMETER_KEY_MODE: MODE_VIEW_FUTURE }, isFolder=True)
+        thumbnailUrl = get_thumbnail_url(item["tvdbid"])
+        addDirectoryItem(nameString, parameters={ PARAMETER_KEY_MODE: MODE_VIEW_FUTURE }, isFolder=True, thumbnail=thumbnailUrl)
 
-        
     xbmcplugin.endOfDirectory(handle=handle, succeeded=True)
     
 def view_history():
 
-    sbUrl = "http://192.168.0.15:2499/api/53da986b7cabc8fd86895c41e9f32714/history/?limit=20"
+    sbUrl = get_sb_url()
+    sbUrl += "history/?limit=20"
     
     apiResponce = urllib2.urlopen(sbUrl)
     apiDataString = apiResponce.read()
@@ -144,7 +183,8 @@ def view_history():
 
     for item in data:
         nameString = str(item["date"]) + " - " + str(item["show_name"]) + " " + str(item["season"]) + "x" + str(item["episode"]) + " - " + str(item["status"])
-        addDirectoryItem(nameString, parameters={ PARAMETER_KEY_MODE: MODE_VIEW_HISTORY }, isFolder=True)
+        thumbnailUrl = get_thumbnail_url(item["tvdbid"])
+        addDirectoryItem(nameString, parameters={ PARAMETER_KEY_MODE: MODE_VIEW_HISTORY }, isFolder=True, thumbnail=thumbnailUrl)
 
     xbmcplugin.endOfDirectory(handle=handle, succeeded=True)
     
