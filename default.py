@@ -21,9 +21,16 @@ dateFormat = "%I:%M %p %a %d %b %Y"
 # plugin modes
 MODE_VIEW_FUTURE = 10
 MODE_VIEW_HISTORY = 20
+MODE_VIEW_SHOWS = 30
+MODE_VIEW_SEASONS = 40
+MODE_VIEW_EPISODES = 50
+MODE_VIEW_EPISODE_INFO = 60
 
 # parameter keys
 PARAMETER_KEY_MODE = "mode"
+PARAMETER_KEY_SHOWID = "show_id"
+PARAMETER_KEY_SEASON_NUM = "season_num"
+PARAMETER_KEY_EPISODE_NUM = "episode_num"
 
 def log(line):
     print "MMS : " + line#repr(line)
@@ -73,10 +80,137 @@ def addDirectoryItem(name, isFolder=True, parameters={}, totalItems=1, thumbnail
 
 def show_root_menu():
 
+    addDirectoryItem(name=language(30110), parameters={ PARAMETER_KEY_MODE: MODE_VIEW_SHOWS }, isFolder=True)
     addDirectoryItem(name=language(30111), parameters={ PARAMETER_KEY_MODE: MODE_VIEW_FUTURE }, isFolder=True)
     addDirectoryItem(name=language(30112), parameters={ PARAMETER_KEY_MODE: MODE_VIEW_HISTORY }, isFolder=True)
     xbmcplugin.endOfDirectory(handle=handle, succeeded=True)
 
+def view_shows():
+
+    sbUrl = get_sb_url()
+    sbUrl += "?cmd=shows"
+    
+    apiResponce = urllib2.urlopen(sbUrl)
+    apiDataString = apiResponce.read()
+    apiResponce.close()
+
+    result = eval(apiDataString)
+    
+    data = result.get('data')
+    if(data == None):
+        data = []
+        
+    show_list = []   
+    
+    for item in data:
+        show_name = result["data"][item]["show_name"]
+        show_tvdbid = result["data"][item]["tvdbid"]        
+        show = {}
+        show["name"] = show_name
+        show["tvdbid"] = show_tvdbid
+        show_list.append(show)
+        
+    show_list = sorted(show_list)
+    
+    for item in show_list:
+        name = item["name"]
+        id = item["tvdbid"]
+        thumbnailUrl = get_thumbnail_url(id)
+        addDirectoryItem(name, parameters={ PARAMETER_KEY_MODE: MODE_VIEW_SEASONS, PARAMETER_KEY_SHOWID: id }, isFolder=True, thumbnail=thumbnailUrl)
+    
+    xbmcplugin.endOfDirectory(handle=handle, succeeded=True)
+    
+def view_episode_info():
+
+    show_id = params.get(PARAMETER_KEY_SHOWID, "0")
+    season_num = params.get(PARAMETER_KEY_SEASON_NUM, "0")
+    episode_num = params.get(PARAMETER_KEY_EPISODE_NUM, "0")
+    
+    sbUrl = get_sb_url()
+    sbUrl += "?cmd=episode&tvdbid=" + show_id + "&season=" + season_num + "&episode=" + episode_num + "&full_path=1"
+    
+    apiResponce = urllib2.urlopen(sbUrl)
+    apiDataString = apiResponce.read()
+    apiResponce.close()
+    
+    result = eval(apiDataString)
+    
+    data = result.get('data')
+    if(data == None):
+        data = []       
+    
+    line01 = "Air Date : " + data["airdate"]
+    line02 = "Status   : " + data["status"] + " - " + data["quality"] + " - " + data["file_size_human"]
+    line03 = data["location"]
+    
+    if(line03 != "" and line03.rfind('\\') > 0):
+        line03 = line03[line03.rfind('\\')+1:]
+    
+    xbmcgui.Dialog().ok("Episode Info", line01, line02, line03)
+
+def view_episodes():
+
+    show_id = params.get(PARAMETER_KEY_SHOWID, "0")
+    season_num = params.get(PARAMETER_KEY_SEASON_NUM, "0")
+    
+    sbUrl = get_sb_url()
+    sbUrl += "?cmd=show.seasons&tvdbid=" + show_id + "&season=" + season_num
+    
+    apiResponce = urllib2.urlopen(sbUrl)
+    apiDataString = apiResponce.read()
+    apiResponce.close()
+    
+    result = eval(apiDataString)
+    
+    data = result.get('data')
+    if(data == None):
+        data = []    
+    
+    show_list_numbers = []
+    for item in data:
+        show_list_numbers.append(int(item))
+        
+    show_list_numbers = sorted(show_list_numbers)
+    
+    for showNum in show_list_numbers:
+        epp_name = data[str(showNum)]["name"]
+        epp_status = data[str(showNum)]["status"]
+        epp_number = season_num + "x" + str(showNum)
+        thumbnailUrl = get_thumbnail_url(show_id)
+        addDirectoryItem(epp_number + " " + epp_name + " (" + epp_status + ")", parameters={ PARAMETER_KEY_MODE: MODE_VIEW_EPISODE_INFO, PARAMETER_KEY_SHOWID: show_id, PARAMETER_KEY_SEASON_NUM: season_num, PARAMETER_KEY_EPISODE_NUM: str(showNum) }, isFolder=True, thumbnail=thumbnailUrl)
+    
+    xbmcplugin.endOfDirectory(handle=handle, succeeded=True)
+    
+def view_seasons():
+    
+    show_id = params.get(PARAMETER_KEY_SHOWID, "0")
+    
+    sbUrl = get_sb_url()
+    sbUrl += "?cmd=show.seasonlist&tvdbid=" + show_id
+    
+    apiResponce = urllib2.urlopen(sbUrl)
+    apiDataString = apiResponce.read()
+    apiResponce.close()
+    
+    result = eval(apiDataString)
+    
+    data = result.get('data')
+    if(data == None):
+        data = []
+
+    season_list = []
+    for season in data:
+        season_list.append(int(season))
+        
+    season_list = sorted(season_list)
+    
+    for season in season_list:
+        season_num = str(season)
+        thumbnailUrl = get_thumbnail_url(show_id)
+        addDirectoryItem("Season " + season_num, parameters={ PARAMETER_KEY_MODE: MODE_VIEW_EPISODES, PARAMETER_KEY_SHOWID: show_id, PARAMETER_KEY_SEASON_NUM: season_num }, isFolder=True, thumbnail=thumbnailUrl)
+    
+    xbmcplugin.endOfDirectory(handle=handle, succeeded=True)
+    
 def get_sb_url():
 
     prot = xbmcplugin.getSetting(handle, "prot")
@@ -97,7 +231,7 @@ def get_sb_url():
     
     sbUrl += guid + "/"
     
-    #xbmc.log(sbUrl, 2)
+    xbmc.log(sbUrl, 2)
     
     return sbUrl
     
@@ -199,4 +333,12 @@ elif mode == MODE_VIEW_FUTURE:
     ok = view_future()
 elif mode == MODE_VIEW_HISTORY:
     ok = view_history()
+elif mode == MODE_VIEW_SHOWS:
+    ok = view_shows()
+elif mode == MODE_VIEW_SEASONS:
+    ok = view_seasons()    
+elif mode == MODE_VIEW_EPISODES:
+    ok = view_episodes()        
+elif mode == MODE_VIEW_EPISODE_INFO:
+    ok = view_episode_info()        
 
