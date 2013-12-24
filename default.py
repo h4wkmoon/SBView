@@ -9,6 +9,7 @@ import time
 import datetime
 import xbmcaddon
 import urllib2
+import traceback
 from traceback import print_exc
 
 __settings__ = xbmcaddon.Addon(id='plugin.video.sbview')
@@ -33,9 +34,9 @@ PARAMETER_KEY_SEASON_NUM = "season_num"
 PARAMETER_KEY_EPISODE_NUM = "episode_num"
 
 def log(line):
-    print "MMS : " + line#repr(line)
+    #print "SBVIEW : " + line#repr(line)
+    xbmc.log("SBVIEW : " + line, 0)
         
-    #xbmc.log(line, 2)
     #xbmc.log("Test", 0) #Debug
     #xbmc.log("text", 1) #Info
     #xbmc.log("Test", 2) #Notive
@@ -85,16 +86,38 @@ def show_root_menu():
     addDirectoryItem(name=language(30112), parameters={ PARAMETER_KEY_MODE: MODE_VIEW_HISTORY }, isFolder=True)
     xbmcplugin.endOfDirectory(handle=handle, succeeded=True)
 
+def get_api_result(sbUrl):
+
+    try:
+    
+        apiResponce = urllib2.urlopen(sbUrl)
+        apiDataString = apiResponce.read()
+        apiResponce.close()
+
+        result = eval(apiDataString)
+        
+        resultString = result.get("result")
+        resultMessage = result.get("message")
+        
+        if(resultString != "success"):
+            xbmcgui.Dialog().ok("API Request Error", resultString, resultMessage)
+            log(resultString + " - " + resultMessage)
+        
+        return result
+        
+    except:
+        exc_type, exc_value, exc_traceback = sys.exc_info()
+        #formatted_lines = traceback.format_exc().splitlines()
+        xbmcgui.Dialog().ok("API Request Error", str(exc_type), str(exc_value))
+        log(str(exc_type) + " - " + str(exc_value))
+        return {}
+    
 def view_shows():
 
     sbUrl = get_sb_url()
     sbUrl += "?cmd=shows"
     
-    apiResponce = urllib2.urlopen(sbUrl)
-    apiDataString = apiResponce.read()
-    apiResponce.close()
-
-    result = eval(apiDataString)
+    result = get_api_result(sbUrl)
     
     data = result.get('data')
     if(data == None):
@@ -129,11 +152,7 @@ def view_episode_info():
     sbUrl = get_sb_url()
     sbUrl += "?cmd=episode&tvdbid=" + show_id + "&season=" + season_num + "&episode=" + episode_num + "&full_path=1"
     
-    apiResponce = urllib2.urlopen(sbUrl)
-    apiDataString = apiResponce.read()
-    apiResponce.close()
-    
-    result = eval(apiDataString)
+    result = get_api_result(sbUrl)
     
     data = result.get('data')
     if(data == None):
@@ -156,11 +175,7 @@ def view_episodes():
     sbUrl = get_sb_url()
     sbUrl += "?cmd=show.seasons&tvdbid=" + show_id + "&season=" + season_num
     
-    apiResponce = urllib2.urlopen(sbUrl)
-    apiDataString = apiResponce.read()
-    apiResponce.close()
-    
-    result = eval(apiDataString)
+    result = get_api_result(sbUrl)
     
     data = result.get('data')
     if(data == None):
@@ -188,11 +203,7 @@ def view_seasons():
     sbUrl = get_sb_url()
     sbUrl += "?cmd=show.seasonlist&tvdbid=" + show_id
     
-    apiResponce = urllib2.urlopen(sbUrl)
-    apiDataString = apiResponce.read()
-    apiResponce.close()
-    
-    result = eval(apiDataString)
+    result = get_api_result(sbUrl)
     
     data = result.get('data')
     if(data == None):
@@ -231,8 +242,6 @@ def get_sb_url():
     
     sbUrl += guid + "/"
     
-    xbmc.log(sbUrl, 2)
-    
     return sbUrl
     
 def get_thumbnail_url(show_id):
@@ -247,12 +256,7 @@ def view_future():
     sbUrl = get_sb_url()
     sbUrl += "future"
     
-    apiResponce = urllib2.urlopen(sbUrl)
-    apiDataString = apiResponce.read()
-    apiResponce.close()
-    #xbmc.log(apiDataString, 2)
-    
-    result = eval(apiDataString)
+    result = get_api_result(sbUrl)
     
     data = result.get('data')
     if(data == None):
@@ -304,12 +308,7 @@ def view_history():
     sbUrl = get_sb_url()
     sbUrl += "history/?limit=20"
     
-    apiResponce = urllib2.urlopen(sbUrl)
-    apiDataString = apiResponce.read()
-    apiResponce.close()
-    #xbmc.log(apiDataString, 2)
-    
-    result = eval(apiDataString)
+    result = get_api_result(sbUrl)
 
     data = result.get('data')
     if(data == None):
