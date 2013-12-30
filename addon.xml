@@ -8,12 +8,12 @@
   </extension>
   <extension point="xbmc.addon.metadata">
     <license>GNU GENERAL PUBLIC LICENSE Version 3, 29 June 2007</license>
-    <forum></forum>
+    <forum>http://forum.xbmc.org/showthread.php?tid=181154</forum>
     <platform>all</platform>
     <language>en</language>
     <website></website>
     <email></email>
-    <source></source>
+    <source>https://github.com/faush01/SBView/</source>
     <summary lang="en">Sick Beard Status Viewer</summary>
     <description lang="en">Sick Beard Status Viewer</description>
   </extension>
