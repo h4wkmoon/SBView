@@ -15,6 +15,18 @@
     <email></email>
     <source>https://github.com/faush01/SBView/</source>
     <summary lang="en">Sick Beard Status Viewer</summary>
-    <description lang="en">Sick Beard Status Viewer</description>
+    <description lang="en">
+This Addon can view TV Shows, upcoming episodes and history events from your Sick Beard setup.
+
+Sick Beard is a automated TV download manager tool available from:
+http://www.sickbeard.com
+
+Easy way to set the API Key
+In Sick Beard enable the API on the General config page
+Open the Addon Settings file using notepad
+c:\Users\[user]\AppData\Roaming
+\XBMC\userdata\addon_data\plugin.video.sbview\settings.xml
+Past the API Key into the value field of setting with id="guid"
+    </description>
   </extension>
 </addon>
