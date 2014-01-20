@@ -236,6 +236,10 @@ def get_sb_url():
     port = xbmcplugin.getSetting(handle, "port")
     sbUrl += ":" + port    
     
+    web_root = xbmcplugin.getSetting(handle, "web_root")
+    if (web_root!="/"):
+        sbUrl += web_root    
+    
     sbUrl += "/api/"
     
     guid = xbmcplugin.getSetting(handle, "guid")
